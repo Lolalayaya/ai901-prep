@@ -60,7 +60,7 @@ src/
 
 ## 對應 Sophavia MVP 規格
 
-對照 [`.scratch/sophavia-mvp/spec.md`](../../.scratch/sophavia-mvp/spec.md):
+對照 Sophavia repo(私人)裡的 `.scratch/sophavia-mvp/spec.md`:
 
 | 規格 | 原型裡的對應 | 備註 |
 |---|---|---|
@@ -83,7 +83,7 @@ src/
 1. `src/domain/` 與 `src/data/` 直接搬到 Sophavia 的 Next.js 專案(例如 `src/lib/study/`),測試一起搬。
 2. 寫 `SupabaseRepository` 實作 `StudyRepository`,或把 `StudyState` 拆成 `goals / milestones / plan_tasks / resources / notes` 資料表,每張表加 `user_id`。
 3. `src/ui/` 的字串模板改寫成 React 元件;`styles.css` 的 token 換成 Sophavia 正式的 design token。
-4. 依 [`docs/superpowers/plans/2026-08-02-ux-process-mvp-definition.md`](../../docs/superpowers/plans/2026-08-02-ux-process-mvp-definition.md),正式實作仍排在 Figma 原型通過可用性測試之後;這個原型可以當作 Figma 設計與可用性測試的素材。
+4. 依 Sophavia repo 的 `docs/superpowers/plans/2026-08-02-ux-process-mvp-definition.md`,正式實作仍排在 Figma 原型通過可用性測試之後;這個原型可以當作 Figma 設計與可用性測試的素材。
 
 ## 發佈到 GitHub Pages
 
