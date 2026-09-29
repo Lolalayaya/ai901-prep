@@ -2,6 +2,7 @@ import './styles.css';
 import { taipeiToday } from './domain/dates';
 import { carryOver } from './domain/rolling';
 import type { GoalStatus, Note, ResourceCategory, ResourceStatus, StudyState } from './domain/types';
+import { BackupError, backupFilename, describeState, parseBackup, toBackup } from './storage/backup';
 import { LocalStorageRepository, type StudyRepository } from './storage/repository';
 import { esc, splitTags } from './ui/html';
 import { initialUI, TABS, type Tab, type UIState } from './ui/ui-state';
@@ -245,9 +246,91 @@ document.addEventListener('submit', (e) => {
   }
 });
 
+// ---------- 匯入／匯出備份 ----------
+const LAST_EXPORT_KEY = 'sophavia.ai901.lastExport';
+let pendingImport: StudyState | null = null;
+
+function readLastExport(): string | null {
+  try { return localStorage.getItem(LAST_EXPORT_KEY); } catch { return null; }
+}
+
+function renderBackupNote(): void {
+  const last = readLastExport();
+  const note = $('backup-note');
+  if (!last) {
+    note.textContent = '資料只存在這個瀏覽器，還沒有備份過';
+    note.parentElement!.dataset.s = 'warn';
+    return;
+  }
+  const days = Math.floor((Date.now() - Date.parse(last)) / 864e5);
+  note.textContent = `上次備份：${days === 0 ? '今天' : `${days} 天前`}`;
+  note.parentElement!.dataset.s = days >= 7 ? 'warn' : 'ok';
+}
+
+function showMessage(html: string, tone: 'ok' | 'warn' | 'info'): void {
+  const box = $('data-msg');
+  box.className = `data-msg ${tone}`;
+  box.innerHTML = html;
+  box.hidden = false;
+}
+
+function exportBackup(): void {
+  const now = new Date();
+  const blob = new Blob([toBackup(state, now)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = backupFilename(now);
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  try { localStorage.setItem(LAST_EXPORT_KEY, now.toISOString()); } catch { /* 記不住備份時間不影響匯出 */ }
+  renderBackupNote();
+  showMessage(`<span>已匯出 <b>${esc(a.download)}</b>，內容：${esc(describeState(state))}。建議存到雲端硬碟，換電腦時用「匯入備份」還原。</span><button type="button" class="link" data-action="msg-close">關閉</button>`, 'ok');
+}
+
+async function readImportFile(file: File): Promise<void> {
+  try {
+    const { state: incoming, exportedAt } = parseBackup(await file.text());
+    pendingImport = incoming;
+    const when = exportedAt ? `（${esc(new Date(exportedAt).toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }))} 匯出）` : '';
+    showMessage(`<span>要用 <b>${esc(file.name)}</b>${when} 取代目前的資料嗎？<br>備份內容：${esc(describeState(incoming))}。<br>目前資料：${esc(describeState(state))}，取代後無法復原，需要的話先匯出一份。</span>
+      <span class="acts"><button type="button" class="btn small" data-action="import-confirm">取代目前資料</button><button type="button" class="btn ghost" data-action="import-cancel">取消</button></span>`, 'info');
+  } catch (err) {
+    pendingImport = null;
+    const msg = err instanceof BackupError ? err.message : '讀取檔案時發生錯誤，請確認選的是備考站匯出的 .json 檔。';
+    showMessage(`<span>匯入失敗：${esc(msg)}</span><button type="button" class="link" data-action="msg-close">關閉</button>`, 'warn');
+  }
+}
+
+$('btn-export').addEventListener('click', exportBackup);
+$('btn-import').addEventListener('click', () => ($('import-file') as HTMLInputElement).click());
+$('import-file').addEventListener('change', (e) => {
+  const input = e.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = '';
+  if (file) void readImportFile(file);
+});
+document.addEventListener('click', (e) => {
+  const el = (e.target as HTMLElement).closest<HTMLElement>('[data-action]');
+  const action = el?.dataset.action;
+  if (action === 'import-confirm' && pendingImport) {
+    state = pendingImport;
+    pendingImport = null;
+    Object.assign(ui, initialUI());
+    void repo.save(state);
+    render();
+    showMessage(`<span>已匯入備份：${esc(describeState(state))}。</span><button type="button" class="link" data-action="msg-close">關閉</button>`, 'ok');
+  } else if (action === 'import-cancel' || action === 'msg-close') {
+    pendingImport = null;
+    $('data-msg').hidden = true;
+  }
+});
+
 async function boot(): Promise<void> {
   state = await repo.load();
   render();
+  renderBackupNote();
   // 倒數每分鐘更新；只重畫摘要列，不影響正在輸入的欄位
   window.setInterval(() => { $('summary').innerHTML = renderSummary(state, taipeiToday()); }, 60_000);
 }

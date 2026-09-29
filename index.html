@@ -20,8 +20,16 @@
           <h1><span class="code">AI-901</span> 備考站</h1>
           <p id="goal-line"></p>
         </div>
-        <div class="sync" id="sync"><i></i><span>存在這台裝置的瀏覽器</span></div>
+        <div class="data-ctl">
+          <div class="sync"><i></i><span id="backup-note">資料存在這台裝置的瀏覽器</span></div>
+          <div class="acts">
+            <button type="button" class="btn ghost" id="btn-export">匯出備份</button>
+            <button type="button" class="btn ghost" id="btn-import">匯入備份</button>
+            <input type="file" id="import-file" accept=".json,application/json" hidden />
+          </div>
+        </div>
       </header>
+      <div id="data-msg" role="status" aria-live="polite" hidden></div>
       <section id="summary" class="strip" aria-label="進度摘要"></section>
       <nav class="tabs" id="tabs" role="tablist"></nav>
       <main id="view"></main>

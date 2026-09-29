@@ -14,7 +14,9 @@ npm test         # domain 邏輯單元測試(Vitest)
 npm run build    # 型別檢查 + 打包到 dist/
 ```
 
-資料存在瀏覽器的 localStorage(key:`sophavia.ai901.v1`)。換瀏覽器或清除網站資料會回到初始計畫。
+資料存在瀏覽器的 localStorage(key:`sophavia.ai901.v1`),網站更新不會清掉資料。
+清除網站資料、換瀏覽器或換裝置就看不到,所以請定期用右上角的 **匯出備份** 存一份 JSON,換裝置時用 **匯入備份** 還原。
+超過 7 天沒備份,右上角會變成橘色提醒。讀不懂的舊資料(例如格式改版)不會被刪掉,會另存成 `sophavia.ai901.v1.unreadable.<時間>`。
 
 ## 功能
 
@@ -54,6 +56,7 @@ src/
     ai901-seed.ts   AI-901 讀書計畫的初始資料
   storage/
     repository.ts   StudyRepository 介面 + LocalStorageRepository
+    backup.ts       匯入／匯出備份檔的格式與檢查
   ui/               原生 TS 字串模板;整合時會改寫成 React 元件
   main.ts           事件處理、存檔、重畫
 ```

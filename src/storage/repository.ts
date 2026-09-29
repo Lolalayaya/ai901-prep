@@ -1,5 +1,6 @@
 import { createSeed } from '../data/ai901-seed';
 import type { StudyState } from '../domain/types';
+import { parseBackup } from './backup';
 
 /**
  * 儲存層的接縫。原型用 localStorage；整合進 Sophavia 時，
@@ -14,16 +15,24 @@ export class LocalStorageRepository implements StudyRepository {
   constructor(private readonly key = 'sophavia.ai901.v1') {}
 
   async load(): Promise<StudyState> {
+    let raw: string | null = null;
     try {
-      const raw = localStorage.getItem(this.key);
-      if (raw) {
-        const parsed = JSON.parse(raw) as StudyState;
-        if (parsed.version === 1) return parsed;
-      }
+      raw = localStorage.getItem(this.key);
     } catch {
-      // 讀不到（私密模式、資料損毀）就從初始資料開始
+      return createSeed(); // 私密模式等情況讀不到儲存空間
     }
-    return createSeed();
+    if (!raw) return createSeed();
+    try {
+      return parseBackup(raw).state;
+    } catch {
+      // 讀不懂的資料(格式改版、損毀)不直接丟掉,先另存一份再從初始計畫開始
+      try {
+        localStorage.setItem(`${this.key}.unreadable.${Date.now()}`, raw);
+      } catch {
+        // 空間不足時放棄另存
+      }
+      return createSeed();
+    }
   }
 
   async save(state: StudyState): Promise<void> {
