@@ -84,3 +84,21 @@ src/
 2. 寫 `SupabaseRepository` 實作 `StudyRepository`,或把 `StudyState` 拆成 `goals / milestones / plan_tasks / resources / notes` 資料表,每張表加 `user_id`。
 3. `src/ui/` 的字串模板改寫成 React 元件;`styles.css` 的 token 換成 Sophavia 正式的 design token。
 4. 依 [`docs/superpowers/plans/2026-08-02-ux-process-mvp-definition.md`](../../docs/superpowers/plans/2026-08-02-ux-process-mvp-definition.md),正式實作仍排在 Figma 原型通過可用性測試之後;這個原型可以當作 Figma 設計與可用性測試的素材。
+
+## 發佈到 GitHub Pages
+
+Sophavia 是私人 repo,所以網站放在另一個公開 repo `Lolalayaya/ai901-prep`,只包含這個資料夾的內容。
+[`.github/workflows/pages.yml`](.github/workflows/pages.yml) 在那個 repo 的根目錄才會執行:push 到 `main` 會自動測試、打包、部署。
+
+在 Sophavia repo 根目錄更新網站:
+
+```bash
+git subtree split --prefix prototypes/ai901-prep -b ai901-pages
+git push ai901 ai901-pages:main
+git branch -D ai901-pages
+```
+
+第一次需要先加 remote:`git remote add ai901 https://github.com/Lolalayaya/ai901-prep.git`,
+並在 ai901-prep 的 Settings → Pages → Build and deployment → Source 選 **GitHub Actions**。
+
+網址:https://lolalayaya.github.io/ai901-prep/ 。網站是公開的,但每位訪客的進度只存在自己的瀏覽器。
